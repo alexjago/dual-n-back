@@ -1,0 +1,66 @@
+<!DOCTYPE html><html class=''>
+<head>
+    <meta charset='UTF-8'>
+    <meta name="robots" content="noindex">
+    <title>The Experiment Factory Dual N-Back</title>
+    
+<link rel='stylesheet' type='text/css' href='jspsych.css'>
+<link rel='stylesheet' type='text/css' href='default_style.css'>
+<link rel='stylesheet' type='text/css' href='style.css'>
+</head>
+
+<body>
+<script src='js/jquery.min.js'></script>
+<script src='js/jspsych/jspsych.js'></script>
+<script src="js/math.min.js"></script>
+<script src='experiment.js'></script>
+
+<script>
+$( document ).ready(function() {
+
+    jsPsych.init({
+             timeline: dual_n_back_experiment, // `dual_n_back_experiment` var defined in `experiment.js`
+             display_element: "getDisplayElement",
+             fullscreen: true,
+             on_trial_finish: function(data){ // `data` var defined in `experiment.js` ?
+               addID('dual_n_back')
+             },
+             
+             preload_audio: letters_audio, // `letters_audio` defined in `experiment.js`
+
+             on_finish: function(data){
+
+                 // Serialize the data
+                 var promise = new Promise(function(resolve, reject) {
+                     var data = jsPsych.data.dataAsJSON();
+                     resolve(data);
+                 })
+
+                 promise.then(function(data) {
+
+
+                     $.ajax({
+                         type: "POST",
+                         url: '/save',
+                         data: { "data": data },
+                         success: function(){ document.location = "/next" },
+                         dataType: "application/json",
+                         // Endpoint not running, local save
+                         error: function(err) {
+
+                             if (err.status == 200){
+                                document.location = "/next"
+                             } else {
+                                 // If error, assume local save
+                                jsPsych.data.localSave('dual_n_back_results.csv', 'csv');
+                            }
+                         }
+                     });
+                 })
+             }
+
+      });
+});
+</script>
+</body>
+</html>

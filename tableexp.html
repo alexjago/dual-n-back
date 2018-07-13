@@ -1,0 +1,228 @@
+<!DOCTYPE html><html class=''>
+<head>
+    <meta charset='UTF-8'>
+    <meta name="robots" content="noindex">
+    <title>Table experimentation</title>
+	<style>
+		table, th, td {border-collapse: collapse; border: 1px solid grey}
+		td {width: 20vh; height: 20vh; text-align: center}
+	</style>
+	<script src='js/jquery.min.js'></script>
+</head>
+
+<body>
+
+<table>
+	<tr>
+		<td id="sp1">&nbsp;</td>
+		<td id="sp2">&nbsp;</td>
+		<td id="sp3">&nbsp;</td>
+	</tr>
+	<tr>
+		<td id="sp4">&nbsp;</td>
+		<td id="sp5" style="font-size: 5vh; color: #999">+</td>
+		<td id="sp6">&nbsp;</td>
+	</tr>
+	<tr>
+		<td id="sp7">&nbsp;</td>
+		<td id="sp8">&nbsp;</td>
+		<td id="sp9">&nbsp;</td>
+	</tr>
+</table>
+<div id="statusline"></div>
+<div id="instructions">
+	<p>Dual modality N-back task. Press the 'A' key if the current audio stimulus is the same as 
+		the Nth-previous audio stimulus. Press the 'L' key if the current visual stimulus 
+		is the same as the Nth-previous visual stimulus.</p>
+	<p>There are nine visual and nine auditory stimuli.</p>
+	<p>The visual stimulus is {when a square of the 3x3 grid is coloured red.}<p>
+	<p>The audio stimulus is {a recording of one of nine letter names: A, C, F, G, K, M, P, T, X.}</p>
+	<p>A new pair of stimuli is presented every {stimTime+restTime} seconds.</p>
+<div>
+
+<script>
+	
+	var stimTime = 2000;
+	var restTime = 1000;
+
+	var stimCount = 20;
+	var stimsToGo = stimCount;
+	
+	var audioFlag = false;
+	var visualFlag = false;
+	var quitFlag = false;
+
+	var audio_i = 1; // hoisting for accessibility
+	var visual_i = 1;
+	
+	var N = 1; // LEQ 9 for now - makes sense, if grid of 9 squares
+
+	var audio_matches = 0;	// correct
+	var visual_matches = 0;	// correct
+	var audio_fnegs = 0;	// false negative
+	var visual_fnegs = 0;	// false negative
+	var audio_fpos = 0;		// false positive
+	var visual_fpos = 0;	// false positive
+	
+
+	var audio_q = [];	// queue
+	var visual_q = [];	// queue
+	
+	var letters_audio = ['sounds/A.mp3', 'sounds/C.mp3', 'sounds/F.mp3', 
+						'sounds/G.mp3', 'sounds/K.mp3', 'sounds/M.mp3', 
+						'sounds/P.mp3', 'sounds/T.mp3', 'sounds/X.mp3'];
+	
+	var cardinals = ["0th", "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th"];
+	
+	var audio_entities = [];			
+	for(a=0; a<9; a++){
+		audio_entities.push(new Audio(letters_audio[a]));
+	}
+
+
+	function updateVisualI(){
+		addIDtoQueue(visual_q, visual_i);
+		visual_i = getRndInt();
+	}
+	
+	function updateAudioI(){
+		addIDtoQueue(visual_q, visual_i);
+		audio_i = getRndInt();
+	}
+	
+	function addIDtoQueue(arr, id){
+		// maxlen = 10
+		arr.push(id);
+		while (arr.length > 10) {
+			arr.shift();
+		}
+	}
+
+	function peekNBack(arr, N){ // arrays push & pop at the end (highest index)
+		return arr[10 - N];
+	}
+
+	
+	function getRndInt(){
+		return Math.floor((Math.random() * 9) + 1);
+	}
+
+	function newStimulus(){
+	
+		// handle audio and visual claim flags from previous iteration
+		
+		if(audioFlag){
+			if((stimsToGo <= stimCount) && (peekNBack(audio_q, N) == audio_i)){
+				// both not too early and a correct match 
+				audio_matches++;
+			} else {
+				// either too early or an incorrect match
+				audio_fpos++;
+			}
+		} else if((stimsToGo <= stimCount) && (peekNBack(audio_q, N) == audio_i)){ 
+			// a false negative
+			audio_fnegs++;
+		}
+
+		if(visualFlag){
+			if((stimsToGo <= stimCount) && (peekNBack(visual_q, N) == visual_i)){
+				// both not too early and a correct match 
+				visual_matches++;
+			} else {
+				// either too early or an incorrect match
+				visual_fpos++;
+			}
+		} else if((stimsToGo <= stimCount) && (peekNBack(visual_q, N) == audio_i)){ 
+			// a false negative
+			visual_fnegs++;
+		}
+
+
+		audioFlag = false;
+		visualFlag = false;	
+	
+		updateVisualI(); // and we're off
+		updateAudioI();
+
+		
+		// Enact visual stimulus
+		$("#sp"+visual_i.toString()).css('background-color', 'red');
+		
+		// Enact audio stimulus
+		audio_entities[audio_i - 1].play();
+
+		if(quitFlag || stimCount < 1){
+			clearVisualStim();
+			// summary stats and other cleanup go here
+			console.log("Audio: matches, false positives, false negatives")
+			console.log(audio_matches, audio_fpos, audio_fnegs);
+			console.log("Visual: matches, false positives, false negatives")
+			console.log(visual_matches, visual_fpos, visual_fnegs);
+		} else {
+			stimsToGo--;
+			setTimeout(clearVisualStim, stimTime);
+			setTimeout(newStimulus, stimTime+restTime);
+		}
+	}
+	
+	function clearVisualStim(){
+		// Clear previous visual stimulus
+		// Doesn't matter what it was, just reset entire grid
+		for(var j=1; j<10; j++){
+			$("#sp"+j.toString()).css('background-color', 'white');
+		}
+	}
+	
+	function handleKeypress(e){
+		var keyChar = String.fromCharCode(e.which);
+		console.log(keyChar);
+		switch (keyChar) {
+			case 'A':
+			case 'a': // audio stim match selected
+				audioFlag = true;
+				break;
+			case 'L':
+			case 'l': // visual stim match selected
+				visualFlag = true;
+				break;
+			case 'Q':
+			case 'q': // quit early
+				quitFlag = true;
+				break;
+		}	
+	}
+
+
+	$( document ).ready(function() {
+		
+		// JS doesn't have a sleep() function or anything, and the timeout/interval
+		// stuff is all done via call backs. So recursive setTimeout() is probably
+		// the best approach available. idontlikeit.avi
+		
+		
+		// eventually the rest of this function will be bound to a start button
+		
+		// ensure N is set from input control
+		
+		// ensure focus is on entire thing
+		window.focus();
+		
+		// install event handler
+		$( document ).keypress(handleKeypress);
+		
+		// reset things
+		audio_matches = 0;
+		visual_matches = 0;
+		audio_fnegs = 0;
+		visual_fnegs = 0;
+		audio_fpos = 0;
+		visual_fpos = 0;
+		stimsToGo = stimCount + N;
+		
+		// Kick off the first stimulus!
+		newStimulus();
+		
+	});
+</script>
+</body>
+</html>
