@@ -86,7 +86,7 @@
 	}
 	
 	function updateAudioI(){
-		addIDtoQueue(visual_q, visual_i);
+		addIDtoQueue(audio_q, audio_i);
 		audio_i = getRndInt();
 	}
 	
@@ -95,11 +95,13 @@
 		arr.push(id);
 		while (arr.length > 10) {
 			arr.shift();
+			console.log("Shifted! New length is " + arr.length);
 		}
 	}
 
 	function peekNBack(arr, N){ // arrays push & pop at the end (highest index)
-		return arr[10 - N];
+		// one back is the last element in the array
+		return arr[arr.length - N];
 	}
 
 	
@@ -109,8 +111,7 @@
 
 	function newStimulus(){
 	
-		// handle audio and visual claim flags from previous iteration
-		
+		// handle audio and visual claim flags from previous iteration	
 		if(audioFlag){
 			if((stimsToGo <= stimCount) && (peekNBack(audio_q, N) == audio_i)){
 				// both not too early and a correct match 
@@ -120,7 +121,7 @@
 				audio_fpos++;
 			}
 		} else if((stimsToGo <= stimCount) && (peekNBack(audio_q, N) == audio_i)){ 
-			// a false negative
+			// no claim but instead a false negative
 			audio_fnegs++;
 		}
 
@@ -137,6 +138,18 @@
 			visual_fnegs++;
 		}
 
+		if(quitFlag || stimCount < 1){
+			clearVisualStim();
+			// summary stats and other cleanup go here
+			console.log("N: " + N);
+			console.log("Stimuli pairs presented: ", (stimCount+N-stimsToGo), " of ", (stimCount+N) )
+			console.log("Audio: matches, false positives, false negatives")
+			console.log(audio_matches, audio_fpos, audio_fnegs);
+			console.log("Visual: matches, false positives, false negatives")
+			console.log(visual_matches, visual_fpos, visual_fnegs);
+			
+			return;
+		}
 
 		audioFlag = false;
 		visualFlag = false;	
@@ -151,18 +164,13 @@
 		// Enact audio stimulus
 		audio_entities[audio_i - 1].play();
 
-		if(quitFlag || stimCount < 1){
-			clearVisualStim();
-			// summary stats and other cleanup go here
-			console.log("Audio: matches, false positives, false negatives")
-			console.log(audio_matches, audio_fpos, audio_fnegs);
-			console.log("Visual: matches, false positives, false negatives")
-			console.log(visual_matches, visual_fpos, visual_fnegs);
-		} else {
-			stimsToGo--;
-			setTimeout(clearVisualStim, stimTime);
-			setTimeout(newStimulus, stimTime+restTime);
-		}
+		// continue on our merry way
+		stimsToGo--;
+		setTimeout(clearVisualStim, stimTime);
+		setTimeout(newStimulus, stimTime+restTime);
+		
+		// steal focus back, for reasons
+		window.focus();
 	}
 	
 	function clearVisualStim(){
