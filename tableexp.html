@@ -12,7 +12,7 @@
 
 <body>
 
-<table>
+<table id="visualStimTable">
 	<tr>
 		<td id="sp1">&nbsp;</td>
 		<td id="sp2">&nbsp;</td>
@@ -29,15 +29,39 @@
 		<td id="sp9">&nbsp;</td>
 	</tr>
 </table>
+<table id="resultsTable" style="float:right;">
+	<tr>
+		<th></th>
+		<th>Correct</th>
+		<th>False +ve</th>
+		<th>False -ve</th>
+	</tr>
+	<tr>
+		<th>Audio:</th>
+		<td id="audio_match">
+		<td id="audio_fpos">
+		<td id="audio_fneg">
+	</tr>
+	<tr>
+		<th>Visual:</th>
+		<td id="visual_match">
+		<td id="visual_fpos">
+		<td id="visual_fneg">
+	</tr>
+</table>
 <div id="statusline"></div>
+<div id="controls">
+	<input type="range" min="1" max="9" value="1" id="NSlider">
+	<button type="button" id="start">Start Task!</button>
+</div>
 <div id="instructions">
 	<p>Dual modality N-back task. Press the 'A' key if the current audio stimulus is the same as 
-		the Nth-previous audio stimulus. Press the 'L' key if the current visual stimulus 
-		is the same as the Nth-previous visual stimulus.</p>
+		the <span class="nthout">1st</span>-previous audio stimulus. Press the 'L' key if the current visual stimulus 
+		is the same as the <span class="nthout">1st</span>-previous visual stimulus.</p>
 	<p>There are nine visual and nine auditory stimuli.</p>
 	<p>The visual stimulus is {when a square of the 3x3 grid is coloured red.}<p>
 	<p>The audio stimulus is {a recording of one of nine letter names: A, C, F, G, K, M, P, T, X.}</p>
-	<p>A new pair of stimuli is presented every {stimTime+restTime} seconds.</p>
+	<p>A new pair of stimuli is presented every <span id="timeinfo">3</span> seconds.</p>
 <div>
 
 <script>
@@ -56,6 +80,7 @@
 	var visual_i = 1;
 	
 	var N = 1; // LEQ 9 for now - makes sense, if grid of 9 squares
+	var sliderN = 1;
 
 	var audio_matches = 0;	// correct
 	var visual_matches = 0;	// correct
@@ -95,7 +120,7 @@
 		arr.push(id);
 		while (arr.length > 10) {
 			arr.shift();
-			console.log("Shifted! New length is " + arr.length);
+//			console.log("Shifted! New length is " + arr.length);
 		}
 	}
 
@@ -147,7 +172,7 @@
 			console.log(audio_matches, audio_fpos, audio_fnegs);
 			console.log("Visual: matches, false positives, false negatives")
 			console.log(visual_matches, visual_fpos, visual_fnegs);
-			
+			resetInputs();
 			return;
 		}
 
@@ -199,6 +224,12 @@
 				break;
 		}	
 	}
+	
+	function resetInputs(){
+		$("#start").text("Start task!");
+		$("#start").prop("disabled", false);
+		$("#NSlider").prop("disabled", false);
+	}
 
 
 	$( document ).ready(function() {
@@ -207,29 +238,48 @@
 		// stuff is all done via call backs. So recursive setTimeout() is probably
 		// the best approach available. idontlikeit.avi
 		
+		// slider event handler install
+		$("#NSlider").change(function(e){
+			sliderN = parseInt(e.target.value)
+			$(".nthout").text(cardinals[sliderN]);
+		});
+
+		// ensure time is accurate
 		
-		// eventually the rest of this function will be bound to a start button
+		$("#timeinfo").text((stimTime+restTime)/1000);
+
+		$("#start").click(function(){
 		
-		// ensure N is set from input control
+			// ensure N is set from input control
 		
-		// ensure focus is on entire thing
-		window.focus();
+			// ensure focus is on entire thing
+			window.focus();
 		
-		// install event handler
-		$( document ).keypress(handleKeypress);
+			// install keypress event handlers
+			$( document ).keypress(handleKeypress);
 		
-		// reset things
-		audio_matches = 0;
-		visual_matches = 0;
-		audio_fnegs = 0;
-		visual_fnegs = 0;
-		audio_fpos = 0;
-		visual_fpos = 0;
-		stimsToGo = stimCount + N;
+	
+			// [re]set things
+			audio_matches = 0; 	visual_matches = 0;
+			audio_fnegs = 0; 	visual_fnegs = 0;
+			audio_fpos = 0; 	visual_fpos = 0;		
+			audio_q = []; 		visual_q = [];
+			audioFlag = false; 	visualFlag = false; 	quitFlag = false;
 		
-		// Kick off the first stimulus!
-		newStimulus();
+			N = sliderN;
+			stimsToGo = stimCount + N;
 		
+			// update UI
+		
+			$("#start").text("Task running; press Q to quit");
+			$("#start").prop("disabled", true);
+			$("#NSlider").prop("disabled", true);
+
+		
+			// Kick off the first stimulus!
+			newStimulus();
+		
+		});	// end of handler for start-button
 	});
 </script>
 </body>
