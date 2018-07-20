@@ -7,59 +7,127 @@
 <link rel='stylesheet' type='text/css' href='jspsych.css'>
 <link rel='stylesheet' type='text/css' href='default_style.css'>
 <link rel='stylesheet' type='text/css' href='style.css'>
+
+<style>
+	table, th, td {border-collapse: collapse; border: 1px solid grey}
+	td {width: 15vh; height: 15vh; text-align: center}
+	td div {display: inline-block; height: 20vh; width: 20vh}
+</style>
+
 </head>
 
-<body>
+<body style="margin: 2vh;">
 <script src='js/jquery.min.js'></script>
 <script src='js/jspsych/jspsych.js'></script>
+<script src='js/jspsych/plugins/jspsych-call-function.js'></script>
+<script src='js/jspsych/plugins/jspsych-instructions.js'></script>
 <script src="js/math.min.js"></script>
+<script src='jspsych-dual-n-back.js'></script>
 <script src='experiment.js'></script>
+<h1>Dual modality N-back task</h1>
+<div id="controls" style="color: #555">
+<em>
+	<label for="NSlider">Set the value of N:</label>
+	<input type="number" min="1" max="9" value="1" id="NSlider" class="controls">
+	<label for="TrialCount">Set the number of trials:</label>
+	<input type="number" min="1" max="200" value="10" id="TrialCount" class="controls">
+	<button id="StartExperiment" class="controls">Start Experiment!</button>
+</em>
+</div>
+<div id="instructions">
+	<p>Press the 'A' key if the current audio stimulus is the same as 
+		the <span class="nthout">1st</span>-previous audio stimulus. Press the 'L' key if the current visual stimulus 
+		is the same as the <span class="nthout">1st</span>-previous visual stimulus.</p>
+	<p>There are nine different visual and nine different auditory stimuli.
+	   The visual stimulus is {when a square of the 3x3 grid is coloured red.}
+	   The audio stimulus is {a recording of one of nine letter names: A, C, F, G, K, M, P, T, X.}</p>
+	<p>A new pair of stimuli is presented every <span id="timeinfo">3</span> seconds.</p>
+<div>
+
+<div id="jsPsychDisplayElement"></div>
 
 <script>
 $( document ).ready(function() {
 
-    jsPsych.init({
-             timeline: dual_n_back_experiment, // `dual_n_back_experiment` var defined in `experiment.js`
-             display_element: "getDisplayElement",
-             fullscreen: true,
-             on_trial_finish: function(data){ // `data` var defined in `experiment.js` ?
-               addID('dual_n_back')
-             },
-             
-             preload_audio: letters_audio, // `letters_audio` defined in `experiment.js`
+	// slider event handler install
+	$("#NSlider").change(function(e){
+		sliderN = parseInt(e.target.value)
+		$(".nthout").text(cardinals[sliderN]);
+	});
 
-             on_finish: function(data){
+	$("#StartExperiment").click(function(){
+	
+		sliderN = parseInt($("#NSlider").val());
+		N = sliderN;
+		
+		trialCount = parseInt($("#TrialCount").val());
+		
+		if(trialCount < N){
+			alert("Sorry, N must be less than the number of trials.");
+			return;
+		}
 
-                 // Serialize the data
-                 var promise = new Promise(function(resolve, reject) {
-                     var data = jsPsych.data.dataAsJSON();
-                     resolve(data);
-                 })
+		$(".nthout").text(cardinals[sliderN]);
+		$(".controls").prop("disabled", true);
+		
+		setUpExperiment();
 
-                 promise.then(function(data) {
+		jsPsych.init({
+			timeline: dual_n_back_experiment, // `dual_n_back_experiment` var defined in `experiment.js`
+			display_element: "jsPsychDisplayElement", // blank just uses <body>
+			// fullscreen: true,
+			on_trial_finish: function(data){ // `data` var defined in `experiment.js` ?
+				console.log(data);
+				audio_q.push(data.audio_i);
+				visual_q.push(data.visual_i);
+				// 				jsPsych.data.addDataToLastTrial({
+				// 					exp_id : "dual-n-back"
+				// 				});
+			},
+			audio : true,
+			preload_audio: letters_audio, // `letters_audio` defined in `experiment.js`
 
+			on_finish: function(data){
+				$(".controls").prop("disabled", false);
+				console.log(audio_q, visual_q);
+				jsPsych.data.get().localSave('json', 'dual_n_back_results.json'); 
+				// note that the version of ^^^ in PRP4 is a bit different: 
+				// no .get(). and arguments (format, filename) reversed
 
-                     $.ajax({
-                         type: "POST",
-                         url: '/save',
-                         data: { "data": data },
-                         success: function(){ document.location = "/next" },
-                         dataType: "application/json",
-                         // Endpoint not running, local save
-                         error: function(err) {
+				/*
+				 // Serialize the data
+				 var promise = new Promise(function(resolve, reject) {
+					 var data = jsPsych.data.dataAsJSON();
+					 resolve(data);
+				 })
 
-                             if (err.status == 200){
-                                document.location = "/next"
-                             } else {
-                                 // If error, assume local save
-                                jsPsych.data.localSave('dual_n_back_results.csv', 'csv');
-                            }
-                         }
-                     });
-                 })
-             }
+				 promise.then(function(data) {
 
-      });
+		
+					 $.ajax({
+						 type: "POST",
+						 url: '/save',
+						 data: { "data": data },
+						 success: function(){ document.location = "/next" },
+						 dataType: "application/json",
+						 // Endpoint not running, local save
+						 error: function(err) {
+
+							 if (err.status == 200){
+								document.location = "/next"
+							 } else {
+								 // If error, assume local save
+								jsPsych.data.get().localSave('csv', 'dual_n_back_results.csv');
+							}
+						 }
+					 });
+				 })
+				 */
+			}
+
+		  }); // end jsPsych init
+	}); // end start button onClick
+      
 });
 </script>
 </body>

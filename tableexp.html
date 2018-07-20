@@ -24,7 +24,7 @@
 		<td id="sp6">&nbsp;</td>
 	</tr>
 	<tr>
-		<td id="sp7">&nbsp;</td>
+		<td id='sp7'>&nbsp;</td>
 		<td id="sp8">&nbsp;</td>
 		<td id="sp9">&nbsp;</td>
 	</tr>
@@ -165,6 +165,8 @@
 
 		if(quitFlag || stimCount < 1){
 			clearVisualStim();
+			
+			
 			// summary stats and other cleanup go here
 			console.log("N: " + N);
 			console.log("Stimuli pairs presented: ", (stimCount+N-stimsToGo), " of ", (stimCount+N) )
@@ -172,6 +174,11 @@
 			console.log(audio_matches, audio_fpos, audio_fnegs);
 			console.log("Visual: matches, false positives, false negatives")
 			console.log(visual_matches, visual_fpos, visual_fnegs);
+			
+			// output data
+			
+			
+			
 			resetInputs();
 			return;
 		}
@@ -231,6 +238,19 @@
 		$("#NSlider").prop("disabled", false);
 	}
 
+/*
+	var subjectID = jsPsych.randomization.randomID(4);
+	
+	jsPsych.data.addProperties({
+		subject: subjectID,
+		audio_correct: 0,
+		audio_false_pos: 0,
+		audio_false_neg: 0,
+		visual_correct: 0,
+		visual_false_pos: 0,
+		visual_false_neg: 0
+	});
+*/
 
 	$( document ).ready(function() {
 		
@@ -247,6 +267,7 @@
 		// ensure time is accurate
 		
 		$("#timeinfo").text((stimTime+restTime)/1000);
+		
 
 		$("#start").click(function(){
 		
