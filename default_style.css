@@ -59,7 +59,7 @@ body {
 /* Used for general instructions */
 .block-text {
   width:100%;
-  height 100vw;
+  height: 100vw;
   text-align: justify;
   margin: 0 auto;
   margin-bottom: 1em;
@@ -70,7 +70,7 @@ body {
 /* As above but centered instead of justified. Good for instructions with few lines */
 .center-block-text {
   width:100%;
-  height 100vw;
+  height: 100vw;
   text-align: center;
   margin: 0 auto;
   margin-bottom: 1em;
@@ -199,7 +199,7 @@ label.jspsych-poldrack-survey-multi-choice-text input[type="radio"] {
   top:11px;
   /*left:9.5%;*/
   display:block;
-  /*background-color:#efefef*/;
+  /*background-color:#efefef; */
   height:4px;
   width:100%;
 }
@@ -220,7 +220,7 @@ label.jspsych-poldrack-survey-multi-choice-text input[type="radio"] {
 /*otherwise they are just block*/
 .jspsych-poldrack-survey-multi-choice-opts li {
   display:block;
-  /*width:100% !important*/;
+  /*width:100%; !important*/
   text-align:left;
   vertical-align: top;
   padding: 10px;
@@ -350,7 +350,7 @@ label.jspsych-poldrack-survey-multi-choice-text input[type="radio"] {
 
 .jspsych-attention-check-stimulus > p {
   width:100%;
-  height 100vw;
+  height:100vw;
   text-align: justify;
   margin: 0 auto;
   margin-bottom: 1em;

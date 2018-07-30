@@ -9,6 +9,7 @@ var trialCount = 10;
 
 var N = 1; // LEQ 9 for now - makes sense, if grid of 9 squares
 var sliderN = 1;
+var modalityChoice = "both";
 
 // var audio_matches = 0;	// correct
 // var visual_matches = 0;	// correct
@@ -45,18 +46,6 @@ var big_table_glob = "<table id='visualStimTable'>	<tr>"+
 "</table>";
 
 /*** Helper functions ***/
-
-// 
-// 	if(quitFlag || trialCount < 1){
-// 		clearVisualStim();
-// 		// summary stats and other cleanup go here
-// 		console.log("N: " + N);
-// 		console.log("Stimuli pairs presented: ", (trialCount+N-stimsToGo), " of ", (trialCount+N) )
-// 		console.log("Audio: matches, false positives, false negatives")
-// 		console.log(audio_matches, audio_fpos, audio_fnegs);
-// 		console.log("Visual: matches, false positives, false negatives")
-// 		console.log(visual_matches, visual_fpos, visual_fnegs);
-// 
 
 
 /*** jsPsych block setup ***/
@@ -113,6 +102,7 @@ function setUpExperiment(){
 		trial_fixation_time : restTime,
 		prev_audio : audio_q,
 		prev_visual : visual_q,
+		modality_choice : "both",
 		timeline : timeline_reps, // many!
 	}
 

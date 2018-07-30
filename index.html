@@ -27,24 +27,35 @@
 <h1>Dual modality N-back task</h1>
 <div id="controls" style="color: #555">
 <em>
-	<label for="NSlider">Set the value of N:</label>
+	<label for="NSlider">Set the 'load factor' N:</label>
 	<input type="number" min="1" max="9" value="1" id="NSlider" class="controls">
 	<label for="TrialCount">Set the number of trials:</label>
 	<input type="number" min="1" max="200" value="10" id="TrialCount" class="controls">
+	</br>
+	<label for="AudioOnly">Audio only</label>
+	<input name="modalChoice" id="AudioOnly" type="radio" class="controls"></input>
+	<label for="BothModalities">Audio and visual</label>
+	<input name="modalChoice" id="BothModalities" type="radio" class="controls" checked></input>
+	<label for="VisualOnly">Visual only</label>
+	<input name="modalChoice" id="VisualOnly" type="radio" class="controls"></input>
+	</br>
 	<button id="StartExperiment" class="controls">Start Experiment!</button>
 </em>
 </div>
-<div id="instructions">
-	<p>Press the 'A' key if the current audio stimulus is the same as 
-		the <span class="nthout">1st</span>-previous audio stimulus. Press the 'L' key if the current visual stimulus 
-		is the same as the <span class="nthout">1st</span>-previous visual stimulus.</p>
-	<p>There are nine different visual and nine different auditory stimuli.
-	   The visual stimulus is {when a square of the 3x3 grid is coloured red.}
-	   The audio stimulus is {a recording of one of nine letter names: A, C, F, G, K, M, P, T, X.}</p>
-	<p>A new pair of stimuli is presented every <span id="timeinfo">3</span> seconds.</p>
+<div id="instructions" style="font-size:smaller">
+	<p><span class="AudioInstr">Press the 'X' key if the current audio stimulus is the same as 
+		the <span class="nthout">1st</span>-previous audio stimulus, and the 'Z' key if it is not.</span>
+	<span class="VisualInstr">Press the 'M' key if the current visual stimulus is the same as the 
+		<span class="nthout">1st</span>-previous visual stimulus, and the 'N' key if it is not.</span></p>
+	<p>There are nine different stimuli for each modality.
+	   <span class="VisualInstr">The visual stimulus is when a square of the 3x3 grid is coloured red.</span>
+	   <span class="AudioInstr">The audio stimulus is a recording of one of nine letter names: A, C, F, G, K, M, P, T, X.</span></p>
+	<p>A new stimulus or pair of stimuli is presented every <span id="timeinfo">3</span> seconds. 
+		You can make your choices for the first two seconds, and then there is a one second pause.</p>
 <div>
 
-<div id="jsPsychDisplayElement"></div>
+<div id="jsPsychDisplayElement" tabindex="-1"></div>
+<!--- The `tabindex="-1"` is a silly hack to make the div `.focus()`-able --->
 
 <script>
 $( document ).ready(function() {
@@ -54,6 +65,36 @@ $( document ).ready(function() {
 		sliderN = parseInt(e.target.value)
 		$(".nthout").text(cardinals[sliderN]);
 	});
+
+	// modality radio event handler install
+	$("input[type='radio'][name='modalChoice']").change(function(e){
+		switch(e.target.id){
+			case "AudioOnly":
+				// show audio
+				$("span.AudioInstr").show();
+				// hide visual
+				$("span.VisualInstr").hide();
+				$("#visualStimTable").hide();
+				break;
+			case "VisualOnly":
+				// show audio
+				$("span.AudioInstr").hide();
+				// hide visual
+				$("span.VisualInstr").show();
+				$("#visualStimTable").show();
+				break;
+			case "BothModalities": // this is default
+			default:
+				// show audio
+				$("span.AudioInstr").show();
+				// show visual
+				$("span.VisualInstr").show();
+				$("#visualStimTable").show();
+				break;
+		}
+	});
+
+	$("#jsPsychDisplayElement").html(big_table_glob);
 
 	$("#StartExperiment").click(function(){
 	
@@ -66,11 +107,26 @@ $( document ).ready(function() {
 			alert("Sorry, N must be less than the number of trials.");
 			return;
 		}
+		
+		// determine modality
+		switch($("input[type='radio'][name='modalChoice']:checked").attr('id')){
+			case "AudioOnly":
+				modalityChoice = "audio";
+				break;
+			case "VisualOnly":
+				modalityChoice = "visual";
+				break;
+			case "BothModalities":	// per default
+			default:
+				modalityChoice = "both";
+				break;
+		}
 
 		$(".nthout").text(cardinals[sliderN]);
 		$(".controls").prop("disabled", true);
 		
 		setUpExperiment();
+		$("#jsPsychDisplayElement").trigger("focus");
 
 		jsPsych.init({
 			timeline: dual_n_back_experiment, // `dual_n_back_experiment` var defined in `experiment.js`
@@ -90,9 +146,10 @@ $( document ).ready(function() {
 			on_finish: function(data){
 				$(".controls").prop("disabled", false);
 				console.log(audio_q, visual_q);
-				jsPsych.data.get().localSave('json', 'dual_n_back_results.json'); 
+//				jsPsych.data.get().localSave('json', 'dual_n_back_results.json'); 
+				jsPsych.data.get().localSave('csv', 'dual_n_back_results.csv'); 
 				// note that the version of ^^^ in PRP4 is a bit different: 
-				// no .get(). and arguments (format, filename) reversed
+				// no `.get().` and arguments (format, filename) reversed
 
 				/*
 				 // Serialize the data
