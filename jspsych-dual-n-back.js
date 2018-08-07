@@ -43,7 +43,7 @@ jsPsych.plugins['dual-n-back'] = (function() {
 				pretty_name: 'Load Factor',
 				default: 1,
 				description: 'This is an N-back test. What is N?'
-			},			
+			},
 			audio_stimuli: {
 				type: jsPsych.plugins.parameterType.AUDIO,
 				array: true,
@@ -89,6 +89,13 @@ jsPsych.plugins['dual-n-back'] = (function() {
 				default: 3000,
 				description: 'End trial this many milliseconds after stimulus.'
 			},
+			timeout_is_nomatch: {
+				type: jsPsych.plugins.parameterType.BOOLEAN,
+				pretty_name: 'Timeout is no-match',
+				default: false,
+				description: 'Whether to treat no-responses as "no-match" (default is "no-response"). ' +
+					'NOTE: the "no-match" buttons will still work if not disabled in `choices`.'
+			},
 			prev_audio: {
 				type: jsPsych.plugins.parameterType.INT,
 				pretty_name: 'Audio previous queue',
@@ -118,21 +125,21 @@ jsPsych.plugins['dual-n-back'] = (function() {
 			}
 		}
 	};
-	
+
 
 	/*** Bulk of the trial function
 	/*** Run the trial (on eventual callback) ***/
 	function runMainTrial(display_element, trial) {
-	
+
 		// Set up trial-local variables
-		
+
 		var audioFlag = false;	var visualFlag = false; // var quitFlag = false;
 		var audio_i = getRndInt();	var visual_i = getRndInt();
 		var audioResponse = "true negative"; var visualResponse = "true negative";
 		var audioResponses = []; var visualResponses = [];
-	
+
 		// Assorted helper functions
-		
+
 
 		function peekNBack(arr, N){ // arrays push & pop at the end (highest index)
 			// one back is the last element in the array
@@ -141,7 +148,7 @@ jsPsych.plugins['dual-n-back'] = (function() {
 		function getRndInt(){
 			return Math.floor((Math.random() * 9));
 		}
-		
+
 		/* Helper function to analyse the response */
 		function determineResponse(trial, previous_stims, stimulus_i, current_responses, which_response){
 			if(current_responses.length > 0){
@@ -159,27 +166,34 @@ jsPsych.plugins['dual-n-back'] = (function() {
 				// Four possible responses: true/false; positive/negative.
 				if(trial.trial_number >= trial.trial_n_back){
 					if(peekNBack(previous_stims, trial.trial_n_back) == stimulus_i) {
-						// true positive if selected, else false negative
+						// true positive if 'match' selected, else false negative
 						return current_responses[response_i] ? "true positive" : "false negative";
 					} else {
-						// true negative if selected, else false positive
+						// true negative if 'no-match' selected, else false positive
+						// (but 'no-match' is coded as `false`)
 						return current_responses[response_i] ? "false positive" : "true negative";
 					}
 				} else {
 					// false no matter what, we're too early
 					return "false " + (current_responses[response_i] ? "positive" : "negative");
 				}
-		
-			} else { // no response at all
+
+			} else if (trial.timeout_is_nomatch) { // timeout is no-match
+				if(peekNBack(previous_stims, trial.trial_n_back) == stimulus_i){
+					return "false negative";
+				} else {
+					return "true negative";
+				}
+			} else { // no response at all, timeout is not no-match
 				return "no response";
-			}	
+			}
 		}
-	
-		
+
+
 		// function to handle responses by the subject
 		// This gets called on all keypresses
 		var after_response = function(info) {
-			console.log(info);
+			// console.log(info);
 			var keyChar = jsPsych.pluginAPI.convertKeyCodeToKeyCharacter(info.key);
 			switch(keyChar) {
 				case 'Z':
@@ -201,13 +215,13 @@ jsPsych.plugins['dual-n-back'] = (function() {
 				case 'Q':
 				case 'q': // quit early
 					quitFlag = true;
-					break;			
-			}		
-		
+					break;
+			}
+
 		}
-		
-		
-		
+
+
+
 		// setup audio stimulus
 		if((trial.modality_choice == "both") || (trial.modality_choice == "audio")){
 			var context = jsPsych.pluginAPI.audioContext();
@@ -220,6 +234,7 @@ jsPsych.plugins['dual-n-back'] = (function() {
 				audio.currentTime = 0;
 			}
 		}
+
 		// define function run at end of trial
 		function end_trial() {
 
@@ -247,18 +262,34 @@ jsPsych.plugins['dual-n-back'] = (function() {
 			// Figure out what the visual response was
 			visualResponse = determineResponse(trial, visual_q, visual_i, visualResponses, "last");
 
+			// Set trial data!
+			// Combined items... (and blank specifics)
 			var trial_data = {
 //				"rt": response.rt,
 				"n-back" : trial.trial_n_back,
-				"audio_stimulus": trial.audio_stimuli[audio_i],
-				"audio_response": audioResponse,			
-				"visual_stimulus": trial.visual_stimuli[visual_i],
-				"visual_response": visualResponse,
-				"audio_i" : audio_i,
-				"visual_i" : visual_i,
-				"all_audio_responses" : audioResponses,
-				"all_visual_responses" : visualResponses,
+				"modality_choice": trial.modality_choice,
+				"timeout_is_nomatch" : trial.timeout_is_nomatch,
+				"audio_stimulus": '',
+				"audio_response": '',
+				"audio_i" : '',
+				"all_audio_responses" : '',
+				"visual_stimulus": '',
+				"visual_response": '',
+				"visual_i" : '',
+				"all_visual_responses" : '',
 			};
+			// non-blank specifics
+			if((trial.modality_choice == "both") || (trial.modality_choice == "audio")){
+				trial_data.audio_stimulus = trial.audio_stimuli[audio_i];
+				trial_data.audio_response = audioResponse;
+				trial_data.audio_i = audio_i;
+				trial_data.all_audio_responses = audioResponses;
+			} else if((trial.modality_choice == "both") || (trial.modality_choice == "visual")){
+				trial_data.visual_stimulus = trial.visual_stimuli[visual_i];
+				trial_data.visual_response = visualResponse;
+				trial_data.visual_i = visual_i;
+				trial_data.all_visual_responses = visualResponses;
+			}
 
 			// clear the display but only if last trial
 			if(trial.trial_number == trial.trials_total){
@@ -278,8 +309,10 @@ jsPsych.plugins['dual-n-back'] = (function() {
 		// enact visual stimulus
 		if((trial.modality_choice == "both") || (trial.modality_choice == "visual")){
 			document.getElementById(trial.visual_stimuli[visual_i]).style.visibility = 'visible';
+		} else {
+			display_element.innerHTML = '';
 		}
-		
+
 		// start audio
 		if((trial.modality_choice == "both") || (trial.modality_choice == "audio")){
 			if(context !== null){
@@ -290,8 +323,8 @@ jsPsych.plugins['dual-n-back'] = (function() {
 			}
 		}
 		// start the response listener
-		if( (context !== null) && 
-			((trial.modality_choice == "both") || 
+		if( (context !== null) &&
+			((trial.modality_choice == "both") ||
 				(trial.modality_choice == "audio")) ) { // don't use this way if visual-only!
 			var keyboardListener = jsPsych.pluginAPI.getKeyboardResponse({
 				callback_function: after_response,
@@ -311,7 +344,7 @@ jsPsych.plugins['dual-n-back'] = (function() {
 				allow_held_key: true
 			});
 		}
-		// ensure focus		
+		// ensure focus
 		//display_element.focus();
 
 		// end trial if time limit is set
@@ -319,37 +352,43 @@ jsPsych.plugins['dual-n-back'] = (function() {
 			jsPsych.pluginAPI.setTimeout(function() {
 				end_trial();
 			}, trial.trial_duration);
-		} 
+		}
 
 	}
-	
+
 	plugin.trial = function(display_element, trial){
-	
-		console.log(display_element);
-	
-		console.log(trial.prev_audio, trial.prev_visual);
-			
+
+		console.log(trial);
+		// console.log(display_element);
+		// console.log(trial.prev_audio, trial.prev_visual);
+
 		// Set up Display Element to have slots for both the visual stimulus and the prompt
-	
+
 		var prompt_slot = "<div id='promptSlot'></div>";
 
 		if((trial.modality_choice == "both") || (trial.modality_choice == "visual")){
 			display_element.innerHTML = trial.visual_stimulus_html + prompt_slot;
 		} else {
 			display_element.innerHTML = prompt_slot;
-		}	
-	
+		}
+
 		// show prompt if there is one
 		if (trial.prompt !== null) {
-			document.getElementById("promptSlot").innerHTML = trial.prompt; 
+			document.getElementById("promptSlot").innerHTML = trial.prompt;
 		}
-	
+
+		// spam this everywhere
+		display_element.tabIndex = -1;
+		window.scrollTo(0,document.body.scrollHeight);
+		display_element.focus();
+
 		// After a short delay, move on to the main trial
 		jsPsych.pluginAPI.setTimeout(function(){
+				display_element.tabIndex = -1;
 				window.scrollTo(0,document.body.scrollHeight);
 				display_element.focus();
 				runMainTrial(display_element, trial);
-			}, trial.trial_fixation_time);		
+			}, trial.trial_fixation_time);
 	}
 
 	return plugin;
