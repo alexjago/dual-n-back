@@ -63,14 +63,15 @@ var start_instructions_block = {
   },
   pages: [
 		'This is a set of single and dual-modality N-back memory tasks, also known as "[dual] n-back".',
-		'You will receive visual and/or aural stimuli, and must indicate if either stimulus matches what it was at some point previously.',
-		'Your visual stimulus will be the position of a red square somewhere  on a 3x3 grid.',
+		'You will receive visual and/or aural stimuli, and must indicate if either stimulus matches what it was at some point previously. (You will be told this point for each run.)',
 		'Your aural stimulus will be the recording of one of 9 letter names: A, C, F, G, K, M, P, T, X.',
 		'For example, if N=3, then for a sequence of aural stimuli <em>A, C, M, P, T, M, X, K, T, X</em>, you should indicate a match for the second M and X, but not the second T.',
-		'You will perform 9 series of '+trialCount+' trials: aural-only, visual-only, both aural and visual, for N=3, N=4 and N=5.',
+		'Your visual stimulus will be the position of a red square somewhere  on a 3x3 grid.',
+		'You will perform 9 series of '+trialCount+' trials: aural-only, visual-only, both aural and visual; for N=3, N=4 and N=5.',
 		'The entire experiment should take about '+ Math.round( 1 + (trialCount*9*(stimTime+restTime)/60000))+' minutes.',
   ],
   allow_keys: false,
+	allow_backward: true,
   show_clickable_nav: true,
   post_trial_gap: 1000,
 };
@@ -114,7 +115,8 @@ for(i=0; i < Ns.length; i++){ // iterate over N
 			case "both":
 				timeoutNoMatch = true;
 				thisPrompt = 'Press the "X" key if the aural stimulus matches what it was '+Ns[i]+' times ago.<br>' +
-										'Press the "M" key if the visual stimulus matches what it was '+Ns[i]+' times ago.' ;
+										'Press the "M" key if the visual stimulus matches what it was '+Ns[i]+' times ago.<br>' +
+										'(You do not need to indicate if either stimulus does not match.)';
 				instrPages = [
 					'This set is both aural and visual; N = '+Ns[i]+'.',
 					thisPrompt,
@@ -130,6 +132,7 @@ for(i=0; i < Ns.length; i++){ // iterate over N
 		  },
 		  pages: instrPages,
 		  allow_keys: false,
+			allow_backward: true,
 		  show_clickable_nav: true,
 		  post_trial_gap: 1000,
 		}
