@@ -137,6 +137,7 @@ jsPsych.plugins['dual-n-back'] = (function() {
 		var audio_i = getRndInt();	var visual_i = getRndInt();
 		var audioResponse = "true negative"; var visualResponse = "true negative";
 		var audioResponses = []; var visualResponses = [];
+		var audioRTs = [];	var visualRTs = [];
 
 		// Assorted helper functions
 
@@ -193,24 +194,28 @@ jsPsych.plugins['dual-n-back'] = (function() {
 		// function to handle responses by the subject
 		// This gets called on all keypresses
 		var after_response = function(info) {
-			// console.log(info);
+			//console.log(info);
 			var keyChar = jsPsych.pluginAPI.convertKeyCodeToKeyCharacter(info.key);
 			switch(keyChar) {
 				case 'Z':
 				case 'z': // audio 'no match'
 					audioResponses.push(false);
+					audioRTs.push(Math.floor(info.rt*1000));
 					break;
 				case 'X':
 				case 'x': // audio 'yes match'
 					audioResponses.push(true);
+					audioRTs.push(Math.floor(info.rt*1000));
 					break;
 				case 'N':
 				case 'n': // visual 'no match'
 					visualResponses.push(false);
+					visualRTs.push(Math.floor(info.rt*1000));
 					break;
 				case 'M':
 				case 'm': // visual 'yes match'
 					visualResponses.push(true);
+					visualRTs.push(Math.floor(info.rt*1000));
 					break;
 				case 'Q':
 				case 'q': // quit early
@@ -273,10 +278,12 @@ jsPsych.plugins['dual-n-back'] = (function() {
 				"audio_response": '',
 				"audio_i" : '',
 				"all_audio_responses" : '',
+				"all_audio_RTs" : '',
 				"visual_stimulus": '',
 				"visual_response": '',
 				"visual_i" : '',
 				"all_visual_responses" : '',
+				"all_visual_RTs" : '',
 			};
 			// non-blank specifics
 			if((trial.modality_choice == "both") || (trial.modality_choice == "audio")){
@@ -284,11 +291,14 @@ jsPsych.plugins['dual-n-back'] = (function() {
 				trial_data.audio_response = audioResponse;
 				trial_data.audio_i = audio_i;
 				trial_data.all_audio_responses = audioResponses;
-			} else if((trial.modality_choice == "both") || (trial.modality_choice == "visual")){
+				trial_data.all_audio_RTs = audioRTs;
+			} // definitely not an `else!`
+			if((trial.modality_choice == "both") || (trial.modality_choice == "visual")){
 				trial_data.visual_stimulus = trial.visual_stimuli[visual_i];
 				trial_data.visual_response = visualResponse;
 				trial_data.visual_i = visual_i;
 				trial_data.all_visual_responses = visualResponses;
+				trial_data.all_visual_RTs = visualRTs;
 			}
 
 			// clear the display but only if last trial

@@ -2,7 +2,7 @@
 
 /*** Far to many global variables ***/
 
-var stimTime = 500; // presentation interval
+var stimTime = 800; // presentation interval
 var restTime = 1000; // ISI but it happens *before* the main event
 
 var trialCount = 10;
