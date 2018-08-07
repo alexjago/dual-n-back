@@ -319,9 +319,10 @@ jsPsych.plugins['dual-n-back'] = (function() {
 		// enact visual stimulus
 		if((trial.modality_choice == "both") || (trial.modality_choice == "visual")){
 			document.getElementById(trial.visual_stimuli[visual_i]).style.visibility = 'visible';
-		} else {
-			display_element.innerHTML = '';
 		}
+		//else {
+		//	display_element.innerHTML = '';
+		//}
 
 		// start audio
 		if((trial.modality_choice == "both") || (trial.modality_choice == "audio")){

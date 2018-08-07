@@ -25,41 +25,6 @@
 <script src='jspsych-dual-n-back.js'></script>
 <script src='experiment.js'></script>
 <h1>Dual modality N-back task</h1>
-<div id="controls" style="color: #555">
-<em>
-	<label for="NSlider">Set the 'load factor' N:</label>
-	<input type="number" min="1" max="9" value="1" id="NSlider" class="controls">
-	<label for="TrialCount">Set the number of trials:</label>
-	<input type="number" min="1" max="200" value="10" id="TrialCount" class="controls">
-	<br>
-  </em>Stimulus choices:<em>
-	<label for="AudioOnly">Audio only</label>
-	<input name="modalChoice" id="AudioOnly" type="radio" class="controls"></input>
-	<label for="BothModalities">Audio and visual</label>
-	<input name="modalChoice" id="BothModalities" type="radio" class="controls" checked></input>
-	<label for="VisualOnly">Visual only</label>
-	<input name="modalChoice" id="VisualOnly" type="radio" class="controls"></input>
-  <br>
-  </em>Press keys to indicate both:<em>
-  <label for="UseNoMatch">"match" and "no-match"</label>
-  <input name="noMatchChoice" id="UseNoMatch" class="controls" type="radio" checked>
-  <label for="UseTimeout">only "match"</label>
-  <input name="noMatchChoice" id="UseTimeout" class="controls" type="radio">
-	<br>
-	<button id="StartExperiment" class="controls">Start Experiment!</button>
-</em>
-</div>
-<div id="instructions" style="font-size:smaller">
-	<p><span class="AudioInstr">Press the 'X' key if the current audio stimulus is the same as
-		the <span class="nthout">1st</span>-previous audio stimulus<span class="TNMInstr">, and the 'Z' key if it is not</span>.</span>
-	<span class="VisualInstr">Press the 'M' key if the current visual stimulus is the same as the
-		<span class="nthout">1st</span>-previous visual stimulus<span class="TNMInstr">, and the 'N' key if it is not</span>.</span></p>
-	<p>There are nine different stimuli for each modality.
-	   <span class="VisualInstr">The visual stimulus is when a square of the 3x3 grid is coloured red.</span>
-	   <span class="AudioInstr">The audio stimulus is a recording of one of nine letter names: A, C, F, G, K, M, P, T, X.</span></p>
-	<p>A new stimulus or pair of stimuli is presented every <span id="timeinfo">1.8</span> seconds.
-		You can make your choice[s] for 0.8 seconds, and then there is a one second pause.</p>
-<div>
 
 <div id="jsPsychDisplayElement" tabindex="-1"></div>
 <!--- The `tabindex="-1"` is a silly hack to make the div `.focus()`-able --->
@@ -67,155 +32,60 @@
 <script>
 $( document ).ready(function() {
 
-	// slider event handler install
-	$("#NSlider").change(function(e){
-		sliderN = parseInt(e.target.value)
-		$(".nthout").text(cardinals[sliderN]);
-	});
+	jsPsych.init({
+		timeline: dual_n_back_experiment, // `dual_n_back_experiment` var defined in `experiment.js`
+		display_element: "jsPsychDisplayElement", // blank just uses whole body
+		// fullscreen: true,
+		on_trial_finish: function(data){ // `data` var defined in `experiment.js` ?
+			console.log(data);
+			audio_q.push(data.audio_i);
+			visual_q.push(data.visual_i);
+			// 				jsPsych.data.addDataToLastTrial({
+			// 					exp_id : "dual-n-back"
+			// 				});
+		},
+		audio : true,
+		preload_audio: letters_audio, // `letters_audio` defined in `experiment.js`
 
-	// modality radio event handler install
-	$("input[type='radio'][name='modalChoice']").change(function(e){
-		switch(e.target.id){
-			case "AudioOnly":
-				// show audio
-				$("span.AudioInstr").show();
-				// hide visual
-				$("span.VisualInstr").hide();
-				$("#visualStimTable").hide();
-				break;
-			case "VisualOnly":
-				// show audio
-				$("span.AudioInstr").hide();
-				// hide visual
-				$("span.VisualInstr").show();
-				$("#visualStimTable").show();
-				break;
-			case "BothModalities": // this is default
-			default:
-				// show audio
-				$("span.AudioInstr").show();
-				// show visual
-				$("span.VisualInstr").show();
-				$("#visualStimTable").show();
-				break;
-		}
-	});
-
-  // timeout is no-match event handler install
-  $("input[type='radio'][name='noMatchChoice']").change(function(e){
-    switch(e.target.id){
-      case "UseTimeout":
-        // hide info on no-match keys
-        $("span.TNMInstr").hide();
-        break;
-      case "UseNoMatch": // default
-      default:
-        // show info on no-match keys
-        $("span.TNMInstr").show();
-        break;
-    }
-  });
-
-	$("#jsPsychDisplayElement").html(big_table_glob);
-
-	$("#StartExperiment").click(function(){
-
-		sliderN = parseInt($("#NSlider").val());
-		N = sliderN;
-
-		trialCount = parseInt($("#TrialCount").val());
-
-		if(trialCount < N){
-			alert("Sorry, N must be less than the number of trials.");
-			return;
-		}
-
-		// determine modality
-		switch($("input[type='radio'][name='modalChoice']:checked").attr('id')){
-			case "AudioOnly":
-				modalityChoice = "audio";
-				break;
-			case "VisualOnly":
-				modalityChoice = "visual";
-				break;
-			case "BothModalities":	// per default
-			default:
-				modalityChoice = "both";
-				break;
-		}
-    // determine if timeout means no-match
-    switch($("input[type='radio'][name='noMatchChoice']:checked").attr('id')){
-      case "UseTimeout":
-        timeoutNoMatch = true;
-        break;
-      case "UseNoMatch":
-      default:
-        timeoutNoMatch = false;
-        break;
-    }
-
-		$(".nthout").text(cardinals[sliderN]);
-		$(".controls").prop("disabled", true);
-
-		setUpExperiment();
-		$("#jsPsychDisplayElement").trigger("focus");
-
-		jsPsych.init({
-			timeline: dual_n_back_experiment, // `dual_n_back_experiment` var defined in `experiment.js`
-			display_element: "jsPsychDisplayElement", // blank just uses <body>
-			// fullscreen: true,
-			on_trial_finish: function(data){ // `data` var defined in `experiment.js` ?
-				console.log(data);
-				audio_q.push(data.audio_i);
-				visual_q.push(data.visual_i);
-				// 				jsPsych.data.addDataToLastTrial({
-				// 					exp_id : "dual-n-back"
-				// 				});
-			},
-			audio : true,
-			preload_audio: letters_audio, // `letters_audio` defined in `experiment.js`
-
-			on_finish: function(data){
-				$(".controls").prop("disabled", false);
-				console.log(audio_q, visual_q);
+		on_finish: function(data){
+			$(".controls").prop("disabled", false);
+			console.log(audio_q, visual_q);
 //				jsPsych.data.get().localSave('json', 'dual_n_back_results.json');
-				jsPsych.data.get().localSave('csv', 'dual_n_back_results.csv');
-				// note that the version of ^^^ in PRP4 is a bit different:
-				// no `.get().` and arguments (format, filename) reversed
+			jsPsych.data.get().localSave('csv', 'dual_n_back_results.csv');
+			// note that the version of ^^^ in PRP4 is a bit different:
+			// no `.get().` and arguments (format, filename) reversed
 
-				/*
-				 // Serialize the data
-				 var promise = new Promise(function(resolve, reject) {
-					 var data = jsPsych.data.dataAsJSON();
-					 resolve(data);
-				 })
+			/*
+			 // Serialize the data
+			 var promise = new Promise(function(resolve, reject) {
+				 var data = jsPsych.data.dataAsJSON();
+				 resolve(data);
+			 })
 
-				 promise.then(function(data) {
+			 promise.then(function(data) {
 
 
-					 $.ajax({
-						 type: "POST",
-						 url: '/save',
-						 data: { "data": data },
-						 success: function(){ document.location = "/next" },
-						 dataType: "application/json",
-						 // Endpoint not running, local save
-						 error: function(err) {
+				 $.ajax({
+					 type: "POST",
+					 url: '/save',
+					 data: { "data": data },
+					 success: function(){ document.location = "/next" },
+					 dataType: "application/json",
+					 // Endpoint not running, local save
+					 error: function(err) {
 
-							 if (err.status == 200){
-								document.location = "/next"
-							 } else {
-								 // If error, assume local save
-								jsPsych.data.get().localSave('csv', 'dual_n_back_results.csv');
-							}
-						 }
-					 });
-				 })
-				 */
-			}
-
-		  }); // end jsPsych init
-	}); // end start button onClick
+						 if (err.status == 200){
+							document.location = "/next"
+						 } else {
+							 // If error, assume local save
+							jsPsych.data.get().localSave('csv', 'dual_n_back_results.csv');
+						}
+					 }
+				 });
+			 })
+			 */
+		} // end on_finish 
+  }); // end jsPsych init
 
 });
 </script>
